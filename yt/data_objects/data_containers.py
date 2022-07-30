@@ -800,6 +800,7 @@ class YTDataContainer(abc.ABC):
 
         ## create a ParticleGroup object that contains *every* field
         for ptype in sorted(self.ds.particle_types_raw):
+
             ## skip this particle type if it has no particles in this dataset
             if self[ptype, "relative_particle_position"].shape[0] == 0:
                 continue
@@ -816,19 +817,20 @@ class YTDataContainer(abc.ABC):
                             "detected (but did not request) %s %s", ptype, field
                         )
 
-            ## you must have velocities (and they must be named "Velocities")
-            tracked_arrays = [
-                self[ptype, "relative_particle_velocity"].in_units(velocity_units)
-            ]
-            tracked_names = ["Velocities"]
-
             ## explicitly go after the fields we want
+            field_arrays = []
+            field_names = []
+            unavailable_fields = []
             for field, units in zip(fields_to_include, fields_units):
                 ## determine if you want to take the log of the field for Firefly
                 log_flag = "log(" in units
 
                 ## read the field array from the dataset
-                this_field_array = self[ptype, field]
+                try:
+                    this_field_array = self[ptype, field]
+                except YTFieldNotFound:
+                    unavailable_fields.append( field )
+                    continue
 
                 ## fix the units string and prepend 'log' to the field for
                 ##  the UI name
@@ -843,26 +845,37 @@ class YTDataContainer(abc.ABC):
                     this_field_array = np.log10(this_field_array)
 
                 ## add this array to the tracked arrays
-                tracked_arrays += [this_field_array]
-                tracked_names = np.append(tracked_names, [field], axis=0)
+                field_arrays.append( this_field_array )
+                field_names.append( field )
 
-            ## flag whether we want to filter and/or color by these fields
-            ##  we'll assume yes for both cases, this can be changed after
-            ##  the reader object is returned to the user.
-            tracked_filter_flags = np.ones(len(tracked_names))
-            tracked_colormap_flags = np.ones(len(tracked_names))
+            # Print fields skipped because they were unavailable
+            if len( unavailable_fields ) > 0:
+                print(
+                    'For ptype {} unable to retrieve these fields: {}'.format(
+                        ptype,
+                        unavailable_fields
+                    )
+                )
 
             ## create a firefly ParticleGroup for this particle type
+            # Include fields if available
+            if len( field_arrays ) != 0:
+                ParticleGroup_kwargs = {
+                    'field_arrays': field_arrays,
+                    'field_names': field_names,
+                }
+            else:
+                ParticleGroup_kwargs = {}
             pg = firefly.data_reader.ParticleGroup(
                 UIname=ptype,
                 coordinates=self[ptype, "relative_particle_position"].in_units(
                     coordinate_units
                 ),
-                tracked_arrays=tracked_arrays,
-                tracked_names=tracked_names,
-                tracked_filter_flags=tracked_filter_flags,
-                tracked_colormap_flags=tracked_colormap_flags,
+                velocities = self[ptype, "relative_particle_velocity"].in_units(
+                    velocity_units
+                ),
                 decimation_factor=default_decimation_factor,
+                **ParticleGroup_kwargs
             )
 
             ## bind this particle group to the firefly reader object
