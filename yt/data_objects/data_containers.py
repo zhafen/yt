@@ -704,11 +704,12 @@ class YTDataContainer(abc.ABC):
     def create_firefly_object(
         self,
         JSONdir,
+        ptypes='all',
         fields_to_include=None,
         fields_units=None,
         default_decimation_factor=100,
-        velocity_units="km/s",
         coordinate_units="kpc",
+        velocity_units="km/s",
         show_unused_fields=0,
         **kwargs,
     ):
@@ -798,8 +799,12 @@ class YTDataContainer(abc.ABC):
             JSONdir=JSONdir, clean_JSONdir=True, **kwargs
         )
 
+        # Allow for default value
+        if ptypes == 'all':
+            ptypes = sorted(self.ds.particle_types_raw)
+
         ## create a ParticleGroup object that contains *every* field
-        for ptype in sorted(self.ds.particle_types_raw):
+        for ptype in ptypes:
 
             ## skip this particle type if it has no particles in this dataset
             if self[ptype, "relative_particle_position"].shape[0] == 0:
