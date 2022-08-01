@@ -703,7 +703,7 @@ class YTDataContainer(abc.ABC):
 
     def create_firefly_object(
         self,
-        JSONdir,
+        datadir,
         ptypes='all',
         fields_to_include=None,
         fields_units=None,
@@ -797,7 +797,7 @@ class YTDataContainer(abc.ABC):
 
         ## initialize a firefly reader instance
         reader = firefly.data_reader.Reader(
-            JSONdir=JSONdir, clean_JSONdir=True, **kwargs
+            datadir=datadir, clean_datadir=True, **kwargs
         )
 
         # Allow for default value
