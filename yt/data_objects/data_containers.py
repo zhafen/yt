@@ -707,6 +707,7 @@ class YTDataContainer(abc.ABC):
         ptypes='all',
         fields_to_include=None,
         fields_units=None,
+        field_names=None,
         default_decimation_factor=100,
         coordinate_units="kpc",
         velocity_units="km/s",
@@ -824,9 +825,11 @@ class YTDataContainer(abc.ABC):
 
             ## explicitly go after the fields we want
             field_arrays = []
-            field_names = []
+            generated_field_names = []
+            if field_names is None:
+                field_names = []
             unavailable_fields = []
-            for field, units in zip(fields_to_include, fields_units):
+            for i, ( field, units ) in enumerate( zip(fields_to_include, fields_units) ):
                 ## determine if you want to take the log of the field for Firefly
                 log_flag = "log(" in units
 
@@ -857,7 +860,13 @@ class YTDataContainer(abc.ABC):
 
                 ## add this array to the tracked arrays
                 field_arrays.append( this_field_array )
-                field_names.append( field )
+                if field_names is None:
+                    generated_field_names.append( field )
+                else:
+                    generated_field_names.append( field_names[i] )
+
+            if field_names is None:
+                field_names = generated_field_names
 
             # Print fields skipped because they were unavailable
             if len( unavailable_fields ) > 0:
