@@ -830,9 +830,15 @@ class YTDataContainer(abc.ABC):
                 ## determine if you want to take the log of the field for Firefly
                 log_flag = "log(" in units
 
+                # Prepare the field for calling, allowing good user flexibility.
+                if not isinstance( field, tuple ):
+                    field_call = ( ptype, field )
+                else:
+                    field_call = field
+
                 ## read the field array from the dataset
                 try:
-                    this_field_array = self[ptype, field]
+                    this_field_array = self[field_call]
                 except YTFieldNotFound:
                     unavailable_fields.append( field )
                     continue
