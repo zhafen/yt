@@ -21,7 +21,6 @@ from functools import lru_cache, wraps
 from numbers import Number as numeric_type
 from typing import Any, Callable, Type
 
-import matplotlib
 import numpy as np
 from more_itertools import always_iterable, collapse, first
 from packaging.version import Version
@@ -566,6 +565,8 @@ def get_yt_version():
 
 
 def get_version_stack():
+    import matplotlib
+
     version_info = {}
     version_info["yt"] = get_yt_version()
     version_info["numpy"] = np.version.version
@@ -1258,6 +1259,12 @@ def dictWithFactory(factory: Callable[[Any], Any]) -> Type:
     DictWithFactory class
         A class to create new dictionaries handling missing keys.
     """
+
+    issue_deprecation_warning(
+        "yt.funcs.dictWithFactory will be removed in a future version of yt, please do not rely on it. "
+        "If you need it, copy paste this function from yt's source code",
+        since="4.1",
+    )
 
     class DictWithFactory(dict):
         def __init__(self, *args, **kwargs):
